@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment files and local secrets
+.env
+.env.*
+!.env.example
+
+# Logs and runtime output
+*.log
+logs/
+*.pid
+*.pid.lock
+
+# Build and test output
+dist/
+build/
+coverage/
+.nyc_output/
+
+# Local tooling and OS files
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
