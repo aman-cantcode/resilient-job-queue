@@ -1,4 +1,0 @@
-node-redis :
-
-createClient from redis then wrap it in createNodeRedisClient(frm bullmq) : now compatible with bullmq
-also then we will make one instace of connection wrappedConnection : it will be used throughout
