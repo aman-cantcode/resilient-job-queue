@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 
+LEARN/
+
 # Environment files and local secrets
 .env
 .env.*
@@ -24,3 +26,4 @@ coverage/
 *.swo
 .idea/
 .vscode/
+
