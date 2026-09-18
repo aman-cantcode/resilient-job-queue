@@ -1,4 +1,4 @@
-import { Worker, Worker } from "bullmq";
+import { Worker } from "bullmq";
 import { connectRedis } from "../config/redisClient.js";
 import { env } from '../config/env.js';
 

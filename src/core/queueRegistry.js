@@ -1,4 +1,4 @@
-import env from '../config/env.js';
+import {env} from '../config/env.js';
 
 import { Queue } from 'bullmq';
 import { connectRedis } from '../config/redisClient.js';
