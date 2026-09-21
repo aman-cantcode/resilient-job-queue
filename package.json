@@ -2,11 +2,14 @@
   "name": "resilient-job-queue",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev" : ""
+    "worker": "node scripts/worker.js",
+    "producer": "node scripts/producer.js",
+    "demo": "node scripts/demo.js",
+    "test": "node tests/run-integration-tests.js",
+    "test:unit": "node tests/run-unit-tests.js"
   },
   "keywords": [],
   "author": "",
