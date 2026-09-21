@@ -8,19 +8,16 @@ const concurrency = Number(getArg('concurrency', 1));
 const worker = await createWorker('demo-queue', async (job) => {
   const failTimes = job.data.failTimes ?? 0;
 
-  // demo-only chaos logic — lives here, not in the core package
+  // demo-only chaos logic
   if (job.attemptsMade < failTimes) {
     throw new Error(`simulated failure (attempt ${job.attemptsMade + 1}/${failTimes})`);
   }
 
-  // optional artificial delay — gives you a window to Ctrl+C mid-job
-  // if you want to watch graceful shutdown (or a real stall) happen
+  // optional artificial delay to watch graceful shutdown
   if (job.data.sleepMs) {
     await new Promise((resolve) => setTimeout(resolve, job.data.sleepMs));
   }
 
-  // the actual side effect, guarded so it only ever truly runs once
-  // per job — even if this function gets invoked again after a stall
   const isFirstAttempt = await markIfFirstAttempt(`demo-queue:${job.id}`);
   if (!isFirstAttempt) {
     console.log(`[process] SKIPPED (duplicate) id=${job.id} — idempotency guard caught a repeat run`);
@@ -37,5 +34,5 @@ async function handleShutdown(signal) {
   process.exit(0);
 }
 
-process.on('SIGINT', () => handleShutdown('SIGINT'));   // Ctrl+C
-process.on('SIGTERM', () => handleShutdown('SIGTERM')); // e.g. container/orchestrator stop
+process.on('SIGINT', () => handleShutdown('SIGINT'));   // ctrl + c
+process.on('SIGTERM', () => handleShutdown('SIGTERM')); // container/orchestrator stop

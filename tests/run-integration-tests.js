@@ -1,12 +1,3 @@
-// integration tests — these exercise the real thing against a real
-// Redis, so they need: redis running, `npm install` done, and to be
-// run from the project root. NOT safe to run against a Redis instance
-// you care about keeping clean — it registers its own test-* queues,
-// but nothing here flushes Redis, so leftover test data is harmless
-// but will accumulate over repeated runs.
-//
-// usage: node tests/run-integration-tests.js   (or: npm test)
-
 import assert from 'node:assert/strict';
 import { registerQueue } from '../src/core/queueRegistry.js';
 import { enqueueJob } from '../src/core/producer.js';
@@ -34,9 +25,6 @@ async function test(name, fn) {
   }
 }
 
-// waits for a specific job to reach a TERMINAL outcome on a worker:
-// 'completed', or 'failed' with retries exhausted (our dead-letter
-// point). Ignores intermediate failed-but-will-retry events.
 function waitForOutcome(worker, jobId, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(
@@ -58,35 +46,34 @@ function waitForOutcome(worker, jobId, timeoutMs = 15000) {
           clearTimeout(timer);
           resolve({ outcome: 'dead-lettered', job, err });
         }
-        // else: will retry — keep waiting for the eventual outcome
       }
     });
   });
 }
 
-// ---------------------------------------------------------------
+//
 await test('redis connection is alive', async () => {
   const client = await getRawClient();
   const pong = await client.ping();
   assert.equal(pong, 'PONG');
 });
 
-// ---------------------------------------------------------------
+//
 await test('registerQueue is idempotent — same name returns the same queue instance', async () => {
   const a = await registerQueue('test-registry');
   const b = await registerQueue('test-registry');
   assert.equal(a, b);
 });
 
-// ---------------------------------------------------------------
+//
 await test('enqueueJob throws a clear error for an unregistered queue', async () => {
   await assert.rejects(
     () => enqueueJob('test-never-registered', 'job', {}),
-    /is not registered/
+    /is not registered/   //regex
   );
 });
 
-// ---------------------------------------------------------------
+//
 await test('a normal job is picked up and completes', async () => {
   await registerQueue('test-basic');
   const worker = await createWorker('test-basic', async () => 'ok');
@@ -98,7 +85,7 @@ await test('a normal job is picked up and completes', async () => {
   await worker.close();
 });
 
-// ---------------------------------------------------------------
+//
 await test('a job that fails twice retries with backoff, then succeeds', async () => {
   await registerQueue('test-retry', { attempts: 3, backoffDelayMs: 200 });
   const worker = await createWorker('test-retry', async (job) => {
@@ -115,13 +102,13 @@ await test('a job that fails twice retries with backoff, then succeeds', async (
 
   assert.equal(result.outcome, 'completed');
   assert.equal(result.job.attemptsMade, 3);
-  // backoff waits should be ~200ms + ~400ms = ~600ms minimum before success
+  // ~200ms + 400ms = ~600ms minimum before success
   assert.ok(elapsed >= 500, `expected backoff delay, but only took ${elapsed}ms`);
 
   await worker.close();
 });
 
-// ---------------------------------------------------------------
+//
 await test('a job that always fails gets dead-lettered and stays inspectable', async () => {
   await registerQueue('test-deadletter', { attempts: 2, backoffDelayMs: 100 });
   const worker = await createWorker('test-deadletter', async () => {
@@ -142,7 +129,7 @@ await test('a job that always fails gets dead-lettered and stays inspectable', a
   await worker.close();
 });
 
-// ---------------------------------------------------------------
+//
 await test('retryFailedJob replays a dead-lettered job so it can succeed', async () => {
   await registerQueue('test-retry-replay', { attempts: 1, backoffDelayMs: 100 });
   let shouldFail = true;
@@ -155,7 +142,7 @@ await test('retryFailedJob replays a dead-lettered job so it can succeed', async
   const first = await waitForOutcome(worker, job.id);
   assert.equal(first.outcome, 'dead-lettered');
 
-  shouldFail = false; // simulate "we fixed the underlying issue"
+  shouldFail = false; //job ka issue fix
   await retryFailedJob('test-retry-replay', job.id);
   const second = await waitForOutcome(worker, job.id);
   assert.equal(second.outcome, 'completed');
@@ -163,7 +150,7 @@ await test('retryFailedJob replays a dead-lettered job so it can succeed', async
   await worker.close();
 });
 
-// ---------------------------------------------------------------
+//
 await test('idempotency guard: first call true, second call false', async () => {
   const key = `test:idempotency:${Date.now()}`;
   const first = await markIfFirstAttempt(key);
@@ -172,7 +159,7 @@ await test('idempotency guard: first call true, second call false', async () => 
   assert.equal(second, false);
 });
 
-// ---------------------------------------------------------------
+//
 await test('producer-side dedup: same jobId does not create a second job', async () => {
   await registerQueue('test-dedup');
   const jobId = `dedup-${Date.now()}`;
@@ -181,7 +168,7 @@ await test('producer-side dedup: same jobId does not create a second job', async
   assert.equal(first.id, second.id);
 });
 
-// ---------------------------------------------------------------
+//
 await test('a delayed job does not run before its delay elapses', async () => {
   await registerQueue('test-delayed');
   const worker = await createWorker('test-delayed', async () => 'ok');
@@ -198,7 +185,7 @@ await test('a delayed job does not run before its delay elapses', async () => {
   await worker.close();
 });
 
-// ---------------------------------------------------------------
+//
 await test('a repeating scheduler ticks on its own, then stops after removal', async () => {
   await registerQueue('test-repeating');
   let completions = 0;
@@ -223,7 +210,7 @@ await test('a repeating scheduler ticks on its own, then stops after removal', a
   await worker.close();
 });
 
-// ---------------------------------------------------------------
+//
 await test('concurrency: 3 slow jobs at concurrency=3 run overlapped, not serially', async () => {
   await registerQueue('test-concurrency');
   const worker = await createWorker(
@@ -247,7 +234,7 @@ await test('concurrency: 3 slow jobs at concurrency=3 run overlapped, not serial
   await worker.close();
 });
 
-// ---------------------------------------------------------------
+//
 await test('graceful shutdown waits for an active job to finish before closing', async () => {
   await registerQueue('test-shutdown');
   const worker = await createWorker(
@@ -265,7 +252,7 @@ await test('graceful shutdown waits for an active job to finish before closing',
   assert.equal(result.outcome, 'completed');
 });
 
-// ---------------------------------------------------------------
+//
 const passed = results.filter((r) => r.pass).length;
 console.log(`\n${passed}/${results.length} passed`);
 if (passed !== results.length) process.exitCode = 1;

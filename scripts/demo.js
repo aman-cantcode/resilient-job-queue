@@ -1,5 +1,3 @@
-// guided walkthrough of the full job lifecycle. run this in a second
-// terminal while scripts/worker.js runs in the first — watch both.
 import { registerQueue } from '../src/core/queueRegistry.js';
 import { enqueueJob } from '../src/core/producer.js';
 import { scheduleDelayedJob } from '../src/core/scheduler.js';

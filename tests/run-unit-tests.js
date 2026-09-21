@@ -14,6 +14,8 @@ function test(name, fn) {
   }
 }
 
+
+//check concurrency value: flag
 test('returns the value when the flag is present', () => {
   process.argv = ['node', 'script.js', '--concurrency=5'];
   assert.equal(getArg('concurrency', 1), '5');
