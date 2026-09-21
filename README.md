@@ -135,5 +135,3 @@ resilient-job-queue/
 The queue is designed to be used as a reusable component in other Node.js or Express applications.
 
 A producer can add jobs from an application, while a separate worker process handles the jobs in the background.
-
-See [`INTEGRATION.md`](./INTEGRATION.md) for the integration guide.
